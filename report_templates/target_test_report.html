@@ -1,0 +1,608 @@
+<!doctype html>
+<html lang="ru">
+<head>
+    <meta charset="utf-8">
+    <title>Отчет целевого теста</title>
+    <style>
+        :root {
+            --bg: #f3f6fb;
+            --paper: #ffffff;
+            --ink: #132238;
+            --muted: #5e6b7b;
+            --line: #d7dfeb;
+            --teal: #0f766e;
+            --red: #b42318;
+            --red-soft: #fee4e2;
+            --yellow: #b54708;
+            --yellow-soft: #fef0c7;
+            --green: #0f8a4a;
+            --green-soft: #dcfae6;
+            --gray: #667085;
+            --gray-soft: #eef2f6;
+            --shadow: 0 18px 40px rgba(19, 34, 56, 0.08);
+        }
+
+        * { box-sizing: border-box; }
+        body {
+            margin: 0;
+            padding: 40px;
+            background:
+                radial-gradient(circle at top left, rgba(15, 118, 110, 0.12), transparent 28%),
+                linear-gradient(180deg, #f8fbff 0%, var(--bg) 100%);
+            color: var(--ink);
+            font-family: "Segoe UI", "Trebuchet MS", Arial, sans-serif;
+        }
+
+        .page { max-width: 1260px; margin: 0 auto; }
+        .hero {
+            display: grid;
+            grid-template-columns: 1.7fr 0.85fr;
+            gap: 24px;
+            margin-bottom: 28px;
+        }
+
+        .hero-main, .hero-side, .card, .panel, .graph-card, .issues-card, .response-card {
+            background: var(--paper);
+            border: 1px solid rgba(215, 223, 235, 0.95);
+            border-radius: 24px;
+            box-shadow: var(--shadow);
+        }
+
+        .hero-main {
+            padding: 30px;
+            background:
+                linear-gradient(135deg, rgba(15, 118, 110, 0.08), rgba(255, 255, 255, 0.98)),
+                var(--paper);
+        }
+
+        .hero-side {
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .eyebrow {
+            color: var(--teal);
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: 0.18em;
+            text-transform: uppercase;
+            margin-bottom: 10px;
+        }
+
+        h1 {
+            margin: 0;
+            font-size: 36px;
+            line-height: 1.08;
+        }
+
+        .result-pass { background: linear-gradient(180deg, #e9fbf1, #d8f7e7); }
+        .result-fail { background: linear-gradient(180deg, #fff1ef, #fee5e2); }
+
+        .result-title {
+            color: var(--muted);
+            font-size: 13px;
+            margin-bottom: 12px;
+        }
+
+        .result-badge {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 146px;
+            border-radius: 20px;
+            font-size: 32px;
+            font-weight: 800;
+            letter-spacing: 0.03em;
+        }
+
+        .result-pass .result-badge {
+            background: rgba(255, 255, 255, 0.62);
+            color: var(--green);
+            border: 2px solid rgba(15, 138, 74, 0.18);
+        }
+
+        .result-fail .result-badge {
+            background: rgba(255, 255, 255, 0.62);
+            color: var(--red);
+            border: 2px solid rgba(180, 35, 24, 0.18);
+        }
+
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 16px;
+            margin-bottom: 28px;
+        }
+
+        .card { padding: 18px 20px; }
+
+        .metric-label {
+            font-size: 13px;
+            color: var(--muted);
+            margin-bottom: 8px;
+        }
+
+        .metric-value {
+            font-size: 24px;
+            font-weight: 700;
+            line-height: 1.25;
+        }
+
+        .metric-list {
+            margin: 0;
+            padding-left: 18px;
+            color: var(--ink);
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        .metric-list li + li {
+            margin-top: 4px;
+        }
+
+        .metric-danger {
+            background: linear-gradient(180deg, #fff6f5, #ffe6e3);
+            border-color: rgba(180, 35, 24, 0.18);
+        }
+
+        .metric-danger .metric-value,
+        .metric-danger .metric-label {
+            color: var(--red);
+        }
+
+        .panel, .issues-card { padding: 24px 26px; }
+
+        .issues-card { margin-bottom: 28px; }
+
+        h2 {
+            margin: 0 0 16px;
+            font-size: 22px;
+        }
+
+        h3 {
+            margin: 0 0 12px;
+            font-size: 18px;
+        }
+
+        .response-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 14px;
+            margin-bottom: 28px;
+        }
+
+        .response-card {
+            padding: 16px 18px;
+            border-left: 10px solid transparent;
+        }
+
+        .tone-green { border-left-color: var(--green); background: linear-gradient(180deg, #f8fffb, #eefcf4); }
+        .tone-yellow { border-left-color: var(--yellow); background: linear-gradient(180deg, #fffaf0, #fff5db); }
+        .tone-red { border-left-color: var(--red); background: linear-gradient(180deg, #fff7f7, #ffefef); }
+        .tone-gray { border-left-color: var(--gray); background: linear-gradient(180deg, #fafcff, #f1f5f9); }
+
+        .response-head {
+            display: flex;
+            justify-content: space-between;
+            gap: 16px;
+            align-items: start;
+            margin-bottom: 12px;
+        }
+
+        .response-name {
+            font-size: 16px;
+            font-weight: 700;
+        }
+
+        .tone-badge, .profile-badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 6px 10px;
+            border-radius: 999px;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+
+        .tone-green .tone-badge { background: #dff6e8; color: var(--green); }
+        .tone-yellow .tone-badge { background: #fff1c2; color: var(--yellow); }
+        .tone-red .tone-badge { background: #ffd9d6; color: var(--red); }
+        .tone-gray .tone-badge { background: #e9eef5; color: var(--gray); }
+
+        .response-metrics {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .mini-metric {
+            padding: 10px 12px;
+            border-radius: 14px;
+            background: rgba(255, 255, 255, 0.72);
+            border: 1px solid rgba(255, 255, 255, 0.8);
+        }
+
+        .mini-value {
+            font-size: 18px;
+            font-weight: 700;
+            margin-top: 6px;
+        }
+
+        .slowest {
+            color: var(--muted);
+            line-height: 1.45;
+            font-size: 13px;
+        }
+
+        .issues-card ul {
+            margin: 0;
+            padding-left: 20px;
+            line-height: 1.6;
+        }
+
+        .issues-card li + li { margin-top: 10px; }
+
+        .profile-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 12px;
+            margin-bottom: 28px;
+        }
+
+        .profile-card {
+            padding: 14px 16px;
+            border-radius: 18px;
+            background: #fbfdff;
+            border: 1px solid var(--line);
+        }
+
+        .profile-head {
+            display: flex;
+            justify-content: space-between;
+            gap: 16px;
+            align-items: baseline;
+            margin-bottom: 10px;
+        }
+
+        .profile-name { font-weight: 700; }
+        .profile-percent { font-size: 18px; font-weight: 800; }
+
+        .status-pass { background: var(--green-soft); color: var(--green); }
+        .status-fail { background: var(--red-soft); color: var(--red); }
+        .status-nodata { background: var(--yellow-soft); color: var(--yellow); }
+
+        .progress {
+            width: 100%;
+            height: 12px;
+            background: #edf2f7;
+            border-radius: 999px;
+            overflow: hidden;
+            margin: 8px 0;
+        }
+
+        .progress-bar {
+            height: 100%;
+            border-radius: 999px;
+        }
+
+        .bar-green { background: linear-gradient(90deg, #22c55e, #16a34a); }
+        .bar-yellow { background: linear-gradient(90deg, #facc15, #f59e0b); }
+        .bar-red { background: linear-gradient(90deg, #f97316, #dc2626); }
+
+        .profile-meta {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 10px;
+            color: var(--muted);
+            font-size: 13px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            border-radius: 18px;
+            overflow: hidden;
+            background: #fbfdff;
+        }
+
+        th, td {
+            padding: 14px 16px;
+            text-align: left;
+            border-bottom: 1px solid var(--line);
+            vertical-align: top;
+        }
+
+        th {
+            background: #edf4fb;
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            color: #425169;
+        }
+
+        tr:last-child td { border-bottom: none; }
+
+        .graph-section {
+            display: grid;
+            gap: 22px;
+            margin-top: 28px;
+        }
+
+        .graph-row {
+            display: grid;
+            grid-template-columns: 1.55fr 0.75fr;
+            gap: 20px;
+        }
+
+        .graph-card { padding: 20px; }
+
+        .graph-card img {
+            display: block;
+            width: 100%;
+            border-radius: 16px;
+            border: 1px solid var(--line);
+            background: #09111c;
+        }
+
+        .graph-empty {
+            padding: 34px 20px;
+            border: 1px dashed #bcc8d9;
+            border-radius: 16px;
+            text-align: center;
+            color: var(--muted);
+            background: #f8fbff;
+        }
+
+        .stack {
+            display: grid;
+            gap: 16px;
+        }
+
+        .highlight-card {
+            padding: 18px 20px;
+            border-radius: 20px;
+            background: linear-gradient(180deg, #f6fbff, #eef6ff);
+            border: 1px solid #d7e7fb;
+        }
+
+        .system-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 22px;
+            margin-top: 22px;
+        }
+
+        .text-danger {
+            color: var(--red);
+            font-weight: 800;
+        }
+    </style>
+</head>
+<body>
+    <div class="page">
+        <section class="hero">
+            <div class="hero-main">
+                <div class="eyebrow">Отчет целевого теста</div>
+                <h1>{{ test_name }}</h1>
+            </div>
+            <div class="hero-side {{ result_class }}">
+                <div class="result-title">Статус теста</div>
+                <div class="result-badge">{{ result_label }}</div>
+            </div>
+        </section>
+
+        <section class="summary-grid">
+            <div class="card"><div class="metric-label">Время начала</div><div class="metric-value">{{ started_at }}</div></div>
+            <div class="card"><div class="metric-label">Время конца</div><div class="metric-value">{{ finished_at }}</div></div>
+            <div class="card"><div class="metric-label">Длительность</div><div class="metric-value">{{ hold_duration }}</div></div>
+            <div class="card"><div class="metric-label">Нагрузка</div><div class="metric-value">{{ load_percent }}%</div></div>
+            <div class="card {% if critical_errors != 'Нет' %}metric-danger{% endif %}">
+                <div class="metric-label">Критичные ошибки</div>
+                {% if critical_errors == 'Нет' %}
+                <div class="metric-value">{{ critical_errors }}</div>
+                {% else %}
+                <ol class="metric-list">
+                    {% for item in critical_errors.split(', ') %}
+                    <li>{{ item }}</li>
+                    {% endfor %}
+                </ol>
+                {% endif %}
+            </div>
+            <div class="card"><div class="metric-label">Всего потоков</div><div class="metric-value">{{ max_threads }}</div></div>
+        </section>
+
+        <aside class="issues-card">
+            <h2>Основные выводы</h2>
+            <ul>
+                {% for issue in issues %}
+                <li>{{ issue }}</li>
+                {% endfor %}
+            </ul>
+        </aside>
+
+        <section class="panel" style="margin-top: 28px;">
+            <h2>Сводка по времени отклика</h2>
+            <div class="response-grid">
+                {% for item in response_summary %}
+                <article class="response-card {{ item.tone_class }}">
+                    <div class="response-head">
+                        <div class="response-name">{{ item.name }}</div>
+                        <div class="tone-badge">{{ item.tone_label }}</div>
+                    </div>
+                    <div class="response-metrics">
+                        <div class="mini-metric">
+                            <div class="metric-label">SLA</div>
+                            <div class="mini-value">{{ item.sla }}</div>
+                        </div>
+                        <div class="mini-metric">
+                            <div class="metric-label">Фактическое время</div>
+                            <div class="mini-value">{{ item.actual }}</div>
+                        </div>
+                    </div>
+                    <div class="slowest">
+                        Самый долгий запрос: <strong>{{ item.slowest_request_name }}</strong><br>
+                        Время выполнения: <strong>{{ item.slowest_request_value }}</strong>
+                    </div>
+                </article>
+                {% endfor %}
+            </div>
+        </section>
+
+        <section class="panel" style="margin-top: 28px;">
+            <h2>Попадание в профиль</h2>
+            <div class="profile-grid">
+                {% for item in profile_hits %}
+                <div class="profile-card">
+                    <div class="profile-head">
+                        <div class="profile-name">{{ item.name }}</div>
+                        <div class="profile-percent">{{ item.hit_percent }}</div>
+                    </div>
+                    <div class="profile-badge {% if item.hit_class == 'tone-green' %}status-pass{% elif item.hit_class == 'tone-yellow' %}status-nodata{% else %}status-fail{% endif %}">{{ item.hit_label }}</div>
+                    <div class="progress">
+                        <div class="progress-bar {% if item.hit_class == 'tone-green' %}bar-green{% elif item.hit_class == 'tone-yellow' %}bar-yellow{% else %}bar-red{% endif %}" style="width: {{ item.hit_width }}%;"></div>
+                    </div>
+                    <div class="profile-meta">
+                        <div>По профилю: <strong>{{ item.profile_count }}</strong></div>
+                        <div>Фактически: <strong>{{ item.actual_count }}</strong></div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </section>
+
+        <section class="panel" style="margin-top: 28px;">
+            <h2>Общая сводка по операциям</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Транзакция</th>
+                        <th>Время отклика</th>
+                        <th>Количество выполнений</th>
+                        <th>Количество ошибок</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in transaction_overview %}
+                    <tr>
+                        <td>{{ item.transaction_name }}</td>
+                        <td>{{ item.response_time }}</td>
+                        <td>{{ item.count_total }}</td>
+                        <td {% if item.errors > 0 %}class="text-danger"{% endif %}>{{ item.errors }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </section>
+
+        <section class="panel">
+            <h2>Бизнес-метрики</h2>
+            <div class="graph-section">
+                <div class="graph-card">
+                    <h3>Время отклика операций по 95pct</h3>
+                    {% if graphs.response_p95 %}
+                    <img src="{{ graphs.response_p95 }}" alt="Время отклика операций по 95pct">
+                    {% else %}
+                    <div class="graph-empty">Не удалось получить изображение графика из Grafana.</div>
+                    {% endif %}
+                </div>
+
+                <div class="graph-row">
+                    <div class="graph-card">
+                        <h3>Ошибки</h3>
+                        {% if graphs.errors %}
+                        <img src="{{ graphs.errors }}" alt="График ошибок">
+                        {% else %}
+                        <div class="graph-empty">Не удалось получить изображение графика из Grafana.</div>
+                        {% endif %}
+                    </div>
+                    <div class="stack">
+                        <div class="highlight-card {{ error_highlight_class }}">
+                            <div class="metric-label">Процент ошибок</div>
+                            <div class="metric-value">{{ error_percent }}</div>
+                        </div>
+                        <div class="highlight-card {{ error_highlight_class }}">
+                            <div class="metric-label">Количество ошибок</div>
+                            <div class="metric-value">{{ error_count_total }}</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="graph-card">
+                    <h3>Throughput</h3>
+                    {% if graphs.throughput %}
+                    <img src="{{ graphs.throughput }}" alt="График throughput">
+                    {% else %}
+                    <div class="graph-empty">Не удалось получить изображение графика из Grafana.</div>
+                    {% endif %}
+                </div>
+
+                <div class="graph-card">
+                    <h3>Потоки</h3>
+                    {% if graphs.threads %}
+                    <img src="{{ graphs.threads }}" alt="График потоков">
+                    {% else %}
+                    <div class="graph-empty">Не удалось получить изображение графика из Grafana.</div>
+                    {% endif %}
+                </div>
+            </div>
+        </section>
+
+        <section class="panel" style="margin-top: 28px;">
+            <h2>Аппаратные метрики</h2>
+            <div class="summary-grid" style="margin-bottom: 22px;">
+                {% for item in hardware_findings %}
+                <div class="card {{ item.card_class }}">
+                    <div class="metric-label">Максимальная утилизация {{ item.title }}</div>
+                    <div class="metric-value">{{ item.value }}</div>
+                </div>
+                {% endfor %}
+            </div>
+            <div class="system-grid">
+                <div class="graph-card">
+                    <h3>Утилизация CPU</h3>
+                    {% if graphs.cpu %}
+                    <img src="{{ graphs.cpu }}" alt="График утилизации CPU">
+                    {% else %}
+                    <div class="graph-empty">Не удалось получить изображение графика из Grafana.</div>
+                    {% endif %}
+                </div>
+                <div class="graph-card">
+                    <h3>Утилизация RAM</h3>
+                    {% if graphs.ram %}
+                    <img src="{{ graphs.ram }}" alt="График утилизации RAM">
+                    {% else %}
+                    <div class="graph-empty">Не удалось получить изображение графика из Grafana.</div>
+                    {% endif %}
+                </div>
+                <div class="graph-card">
+                    <h3>Утилизация диска</h3>
+                    {% if graphs.disk %}
+                    <img src="{{ graphs.disk }}" alt="График утилизации диска">
+                    {% else %}
+                    <div class="graph-empty">Не удалось получить изображение графика из Grafana.</div>
+                    {% endif %}
+                </div>
+            </div>
+        </section>
+
+        <section class="panel" style="margin-top: 28px;">
+            <h2>Подпись отчета</h2>
+            <p style="margin: 0; color: var(--muted); line-height: 1.6;">
+                Отчет сформировал: <strong>{{ author_login }}</strong>
+            </p>
+        </section>
+
+        <section class="panel" style="margin-top: 28px;">
+            <h2>Детальный просмотр в Grafana</h2>
+            <p style="margin: 0; color: var(--muted); line-height: 1.6;">
+                Ссылка на полноценный дашборд для детального анализа графиков:
+                <a href="{{ grafana_link }}" target="_blank" rel="noopener noreferrer">{{ grafana_link }}</a>
+            </p>
+        </section>
+    </div>
+</body>
+</html>

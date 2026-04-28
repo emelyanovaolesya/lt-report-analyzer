@@ -1,0 +1,222 @@
+{% extends "base.html" %}
+
+{% block title %}Главная{% endblock %}
+
+{% block content %}
+<section class="hero-panel dashboard-hero">
+    <div>
+        <div class="eyebrow">Главная панель</div>
+        <h2 class="display-6 fw-semibold">Добро пожаловать, {{ user.login }}</h2>
+        <p class="lead text-secondary mb-0">
+            Здесь собраны актуальные показатели по проектам, тестам и отчетам.
+        </p>
+    </div>
+</section>
+
+<section class="row g-3 mt-1">
+    <div class="col-md-4 col-xl-2">
+        <div class="stat-card">
+            <span>Проекты</span>
+            <strong>{{ stats.projects }}</strong>
+        </div>
+    </div>
+    {% if user.role == "ADMIN" %}
+    <div class="col-md-4 col-xl-2">
+        <div class="stat-card">
+            <span>Пользователи</span>
+            <strong>{{ stats.users }}</strong>
+        </div>
+    </div>
+    {% endif %}
+    <div class="col-md-4 col-xl-2">
+        <div class="stat-card">
+            <span>Профили НТ</span>
+            <strong>{{ stats.profiles }}</strong>
+        </div>
+    </div>
+    <div class="col-md-4 col-xl-2">
+        <div class="stat-card">
+            <span>Тесты</span>
+            <strong>{{ stats.tests }}</strong>
+        </div>
+    </div>
+    <div class="col-md-4 col-xl-2">
+        <div class="stat-card">
+            <span>Отчеты</span>
+            <strong>{{ stats.reports }}</strong>
+        </div>
+    </div>
+</section>
+
+{% if user.role != "ADMIN" %}
+<section class="row g-4 mt-2">
+    <div class="col-12">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body">
+                <div class="quality-head">
+                    <div>
+                        <h3 class="h5 mb-1">Дашборд качества проекта</h3>
+                        <p class="text-secondary mb-0">Количество успешных и неуспешных тестов {{ month_quality.period_label }}</p>
+                    </div>
+                </div>
+                <div class="quality-grid">
+                    <div class="quality-card quality-good">
+                        <span>Успешные тесты</span>
+                        <strong>{{ month_quality.successful }}</strong>
+                    </div>
+                    <div class="quality-card quality-bad">
+                        <span>Неуспешные тесты</span>
+                        <strong>{{ month_quality.unsuccessful }}</strong>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endif %}
+
+{% if user.role != "CUSTOMER" %}
+<section class="row g-4 mt-2">
+    <div class="col-12">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body">
+                <h3 class="h5 mb-3">Сервисы мониторинга</h3>
+                <div class="resource-grid">
+                    <a class="resource-card" href="{{ resources.grafana }}" target="_blank" rel="noreferrer">
+                        <span class="resource-label">Grafana</span>
+                        <strong>Открыть дашборды</strong>
+                        <small>{{ resources.grafana }}</small>
+                    </a>
+                    <a class="resource-card" href="{{ resources.influxdb }}" target="_blank" rel="noreferrer">
+                        <span class="resource-label">InfluxDB</span>
+                        <strong>Открыть источник метрик</strong>
+                        <small>{{ resources.influxdb }}</small>
+                    </a>
+                    <a class="resource-card" href="{{ resources.prometheus }}" target="_blank" rel="noreferrer">
+                        <span class="resource-label">Prometheus</span>
+                        <strong>Открыть аппаратные метрики</strong>
+                        <small>{{ resources.prometheus }}</small>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endif %}
+
+{% if user.role in ["ENGINEER", "CUSTOMER"] %}
+<section class="row g-4 mt-2">
+    <div class="col-lg-6">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body">
+                <div class="chart-head">
+                    <div>
+                        <h3 class="h5 mb-1">Динамика проведения тестов</h3>
+                        <p class="text-secondary mb-0">Количество тестов за последние 7 дней</p>
+                    </div>
+                </div>
+                <div class="mini-chart">
+                    {% for point in activity_trend.points %}
+                    <div class="mini-chart-col">
+                        <div class="mini-chart-bars">
+                            <div class="mini-chart-bar tests-bar" style="height: {{ point.tests_height }}px;" title="{{ point.tests }}"></div>
+                        </div>
+                        <div class="mini-chart-value">{{ point.tests }}</div>
+                        <div class="mini-chart-label">{{ point.label }}</div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-6">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body">
+                <div class="chart-head">
+                    <div>
+                        <h3 class="h5 mb-1">Динамика формирования отчетов</h3>
+                        <p class="text-secondary mb-0">Количество отчетов за последние 7 дней</p>
+                    </div>
+                </div>
+                <div class="mini-chart">
+                    {% for point in activity_trend.points %}
+                    <div class="mini-chart-col">
+                        <div class="mini-chart-bars">
+                            <div class="mini-chart-bar reports-bar" style="height: {{ point.reports_height }}px;" title="{{ point.reports }}"></div>
+                        </div>
+                        <div class="mini-chart-value">{{ point.reports }}</div>
+                        <div class="mini-chart-label">{{ point.label }}</div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endif %}
+
+<section class="row g-4 mt-2">
+    <div class="col-lg-6">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body">
+                <h3 class="h5">Последние тесты</h3>
+                <div class="table-responsive">
+                    <table class="table align-middle">
+                        <thead>
+                            <tr>
+                                <th>Название</th>
+                                <th>Нагрузка</th>
+                                <th>Окно</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for test in recent_tests %}
+                            <tr>
+                                <td>{{ test.name }}</td>
+                                <td>{{ test.load_percent }}%</td>
+                                <td>{{ test.started_at }} - {{ test.finished_at }}</td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="3" class="text-secondary">Пока тестов нет</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-6">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body">
+                <h3 class="h5">Последние отчеты</h3>
+                <div class="table-responsive">
+                    <table class="table align-middle">
+                        <thead>
+                            <tr>
+                                <th>Название</th>
+                                <th>Статус</th>
+                                <th>Дата</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for report in recent_reports %}
+                            <tr>
+                                <td>{{ report.name }}</td>
+                                <td><span class="badge text-bg-secondary">{{ report.status }}</span></td>
+                                <td>{{ report.created_at.strftime("%Y-%m-%d %H:%M:%S") if report.created_at else "-" }}</td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="3" class="text-secondary">Пока отчетов нет</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

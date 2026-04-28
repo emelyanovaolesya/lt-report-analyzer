@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+
+{% block title %}Шаблоны отчетов{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <div class="eyebrow">Администрирование</div>
+        <h2>Шаблоны отчетов</h2>
+    </div>
+</div>
+
+{% if message %}
+<div class="alert alert-success">{{ message }}</div>
+{% endif %}
+{% if error %}
+<div class="alert alert-danger">{{ error }}</div>
+{% endif %}
+
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-body">
+        <h3 class="h5 mb-3">Загрузить новый шаблон</h3>
+        <form method="post" action="/report-templates" enctype="multipart/form-data" class="row g-3">
+            <div class="col-md-4">
+                <label class="form-label">Название шаблона</label>
+                <input class="form-control" name="name" required>
+            </div>
+            <div class="col-md-5">
+                <label class="form-label">HTML-файл</label>
+                <input class="form-control" name="template_file" type="file" accept=".html,.htm" required>
+            </div>
+            <div class="col-md-3 d-flex align-items-end">
+                <button class="btn btn-primary w-100">Загрузить</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card border-0 shadow-sm">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table align-middle">
+                <thead>
+                    <tr>
+                        <th>Название</th>
+                        <th>Файл</th>
+                        <th>Действия</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for template_item in templates_list %}
+                    <tr>
+                        <td>{{ template_item.name }}</td>
+                        <td>{{ template_item.file_path.split('/')[-1] }}</td>
+                        <td class="table-actions">
+                            <a class="btn btn-sm btn-outline-dark" href="/report-templates/{{ template_item.id }}/download">Скачать</a>
+                            <form method="post" action="/report-templates/{{ template_item.id }}/delete" onsubmit="return confirm('Удалить шаблон?');" class="mt-2">
+                                <button class="btn btn-sm btn-danger-soft">Удалить</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="3" class="text-secondary">Пока шаблонов нет</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

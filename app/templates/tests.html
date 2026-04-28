@@ -1,0 +1,135 @@
+{% extends "base.html" %}
+
+{% block title %}Тесты{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <div class="eyebrow">Тестовые прогоны</div>
+        <h2>Тесты</h2>
+    </div>
+</div>
+
+{% if message %}
+<div class="alert alert-success">{{ message }}</div>
+{% endif %}
+{% if error %}
+<div class="alert alert-danger">{{ error }}</div>
+{% endif %}
+
+{% if user.role in ["ADMIN", "ENGINEER"] %}
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-body">
+        <h3 class="h5 mb-3">Создать тест</h3>
+        <form method="post" action="/tests" class="row g-3">
+            <div class="col-md-4">
+                <label class="form-label">Название теста</label>
+                <input class="form-control" name="name" required>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">Профиль НТ</label>
+                <select class="form-select" name="load_profile_id" required>
+                    <option value="">Выбрать профиль</option>
+                    {% for profile in profiles %}
+                    <option value="{{ profile.id }}">{{ profile.name }}{% if profile.project %} · {{ profile.project.name }}{% endif %}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Нагрузка, %</label>
+                <input class="form-control" name="load_percent" type="number" min="0" step="1" value="100" required>
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">Время начала</label>
+                <input class="form-control" name="started_at" type="text" placeholder="2026-04-25 20:18:41" required>
+                <div class="form-text">Формат как в Grafana: YYYY-MM-DD HH:MM:SS</div>
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">Время конца</label>
+                <input class="form-control" name="finished_at" type="text" placeholder="2026-04-25 21:18:41" required>
+                <div class="form-text">Формат как в Grafana: YYYY-MM-DD HH:MM:SS</div>
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">InfluxDB bucket / источник бизнес-метрик</label>
+                <input class="form-control" name="influx_bucket" placeholder="Например, lt-metrics">
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">Prometheus URL / endpoint</label>
+                <input class="form-control" name="prometheus_url" placeholder="Например, http://prometheus:9090">
+            </div>
+            <div class="col-12">
+                <button class="btn btn-primary">Сохранить тест</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endif %}
+
+<div class="card border-0 shadow-sm">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table align-middle">
+                <thead>
+                    <tr>
+                        <th>Название</th>
+                        <th>Профиль</th>
+                        <th>Окно теста</th>
+                        <th>Нагрузка</th>
+                        <th>InfluxDB</th>
+                        <th>Prometheus</th>
+                        {% if user.role in ["ADMIN", "ENGINEER"] %}
+                        <th>Действия</th>
+                        {% endif %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for test in tests %}
+                    <tr>
+                        <td>{{ test.name }}</td>
+                        <td>{{ test.load_profile.name if test.load_profile else "-" }}</td>
+                        <td>{{ test.started_at.strftime("%Y-%m-%d %H:%M:%S") }} - {{ test.finished_at.strftime("%Y-%m-%d %H:%M:%S") }}</td>
+                        <td>{{ test.load_percent }}%</td>
+                        <td>{{ test.influx_bucket or "-" }}</td>
+                        <td>{{ test.prometheus_url or "-" }}</td>
+                        {% if user.role in ["ADMIN", "ENGINEER"] %}
+                        <td class="table-actions">
+                            <details>
+                                <summary class="btn btn-sm btn-outline-dark">Редактировать</summary>
+                                <form method="post" action="/tests/{{ test.id }}/update" class="mt-3 d-grid gap-2">
+                                    <input class="form-control form-control-sm" name="name" value="{{ test.name }}" required>
+                                    <select class="form-select form-select-sm" name="load_profile_id" required>
+                                        {% for profile in profiles %}
+                                        <option value="{{ profile.id }}" {% if test.load_profile_id == profile.id %}selected{% endif %}>{{ profile.name }}{% if profile.project %} · {{ profile.project.name }}{% endif %}</option>
+                                        {% endfor %}
+                                    </select>
+                                    <div class="row g-2">
+                                        <div class="col-md-6">
+                                            <input class="form-control form-control-sm" name="started_at" type="text" value="{{ test.started_at.strftime('%Y-%m-%d %H:%M:%S') }}" required>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <input class="form-control form-control-sm" name="finished_at" type="text" value="{{ test.finished_at.strftime('%Y-%m-%d %H:%M:%S') }}" required>
+                                        </div>
+                                    </div>
+                                    <input class="form-control form-control-sm" name="load_percent" type="number" min="0" step="1" value="{{ test.load_percent }}" required>
+                                    <input class="form-control form-control-sm" name="influx_bucket" value="{{ test.influx_bucket }}" placeholder="InfluxDB bucket">
+                                    <input class="form-control form-control-sm" name="prometheus_url" value="{{ test.prometheus_url }}" placeholder="Prometheus URL">
+                                    <button class="btn btn-sm btn-primary">Сохранить</button>
+                                </form>
+                            </details>
+                            <form method="post" action="/tests/{{ test.id }}/delete" onsubmit="return confirm('Удалить тест?');">
+                                <button class="btn btn-sm btn-danger-soft">Удалить</button>
+                            </form>
+                        </td>
+                        {% endif %}
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="{% if user.role in ['ADMIN', 'ENGINEER'] %}7{% else %}6{% endif %}" class="text-secondary">Пока тестов нет</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

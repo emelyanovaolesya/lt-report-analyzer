@@ -1,0 +1,139 @@
+{% extends "base.html" %}
+
+{% block title %}Пользователи{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <div class="eyebrow">Администрирование</div>
+        <h2>Пользователи</h2>
+    </div>
+</div>
+
+{% if message %}
+<div class="alert alert-success">{{ message }}</div>
+{% endif %}
+{% if error %}
+<div class="alert alert-danger">{{ error }}</div>
+{% endif %}
+
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-body">
+        <h3 class="h5 mb-3">Создать пользователя</h3>
+        <form method="post" action="/users" class="row g-3">
+            <div class="col-md-3">
+                <label class="form-label">Логин</label>
+                <input class="form-control" name="login" required>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Почта</label>
+                <input class="form-control" name="email" type="email" required>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Пароль</label>
+                <input class="form-control" name="password" type="password" required>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Роль</label>
+                <select class="form-select" name="role" required>
+                    {% for role_code, role_name in role_labels.items() %}
+                    <option value="{{ role_code }}">{{ role_name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Проект</label>
+                <select class="form-select" name="project_id">
+                    <option value="">Не назначен</option>
+                    {% for project in projects %}
+                    <option value="{{ project.id }}">{{ project.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-12">
+                <button class="btn btn-primary">Создать пользователя</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card border-0 shadow-sm">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table align-middle">
+                <thead>
+                    <tr>
+                        <th>Логин</th>
+                        <th>Почта</th>
+                        <th>Роль</th>
+                        <th>Проект</th>
+                        <th>Изменить привязку</th>
+                        <th>Редактирование</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in users %}
+                    <tr>
+                        <td>{{ item.login }}</td>
+                        <td>{{ item.email }}</td>
+                        <td><span class="badge text-bg-dark">{{ item.role }}</span></td>
+                        <td>{{ item.project.name if item.project else "Не назначен" }}</td>
+                        <td>
+                            <form method="post" action="/users/{{ item.id }}/assignment" class="row g-2">
+                                <div class="col-md-5">
+                                    <select class="form-select form-select-sm" name="role">
+                                        {% for role_code, role_name in role_labels.items() %}
+                                        <option value="{{ role_code }}" {% if item.role == role_code %}selected{% endif %}>{{ role_name }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="col-md-5">
+                                    <select class="form-select form-select-sm" name="project_id">
+                                        <option value="">Не назначен</option>
+                                        {% for project in projects %}
+                                        <option value="{{ project.id }}" {% if item.project_id == project.id %}selected{% endif %}>{{ project.name }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="col-md-2">
+                                    <button class="btn btn-sm btn-outline-dark w-100">Сохранить</button>
+                                </div>
+                            </form>
+                        </td>
+                        <td class="table-actions">
+                            <details>
+                                <summary class="btn btn-sm btn-outline-dark">Редактировать</summary>
+                                <form method="post" action="/users/{{ item.id }}/update" class="mt-3 d-grid gap-2">
+                                    <input class="form-control form-control-sm" name="login" value="{{ item.login }}" required>
+                                    <input class="form-control form-control-sm" name="email" type="email" value="{{ item.email }}" required>
+                                    <input class="form-control form-control-sm" name="password" type="password" placeholder="Новый пароль">
+                                    <select class="form-select form-select-sm" name="role" required>
+                                        {% for role_code, role_name in role_labels.items() %}
+                                        <option value="{{ role_code }}" {% if item.role == role_code %}selected{% endif %}>{{ role_name }}</option>
+                                        {% endfor %}
+                                    </select>
+                                    <select class="form-select form-select-sm" name="project_id">
+                                        <option value="">Не назначен</option>
+                                        {% for project in projects %}
+                                        <option value="{{ project.id }}" {% if item.project_id == project.id %}selected{% endif %}>{{ project.name }}</option>
+                                        {% endfor %}
+                                    </select>
+                                    <button class="btn btn-sm btn-primary">Сохранить</button>
+                                </form>
+                            </details>
+                            <form method="post" action="/users/{{ item.id }}/delete" onsubmit="return confirm('Удалить пользователя?');">
+                                <button class="btn btn-sm btn-danger-soft" {% if user.id == item.id %}disabled{% endif %}>Удалить</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="6" class="text-secondary">Пока пользователей нет</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,151 @@
+{% extends "base.html" %}
+
+{% block title %}Отчеты{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <div class="eyebrow">Отчетность</div>
+        <h2>Отчеты</h2>
+    </div>
+</div>
+
+{% if message %}
+<div class="alert alert-success">{{ message }}</div>
+{% endif %}
+{% if error %}
+<div class="alert alert-danger">{{ error }}</div>
+{% endif %}
+
+{% if user.role in ["ADMIN", "ENGINEER"] %}
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-body">
+        <h3 class="h5 mb-3">Сформировать отчет</h3>
+        <form method="post" action="/reports" class="row g-3" id="report-form">
+            <div class="col-md-4">
+                <label class="form-label">Название отчета</label>
+                <input class="form-control" name="name" required>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">Тип отчета</label>
+                <select class="form-select" name="report_type" id="report-type" required>
+                    <option value="{{ report_type_target }}">Целевой</option>
+                    <option value="{{ report_type_comparative }}">Сравнительный</option>
+                </select>
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">Тест</label>
+                <select class="form-select" name="test_run_id" required>
+                    <option value="">Выбрать тест</option>
+                    {% for test in tests %}
+                    <option value="{{ test.id }}">{{ test.name }} · {{ test.started_at.strftime("%Y-%m-%d %H:%M:%S") }}{% if test.load_profile and test.load_profile.project %} · {{ test.load_profile.project.name }}{% endif %}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-6" id="second-test-field" hidden>
+                <label class="form-label">Второй тест</label>
+                <select class="form-select" name="second_test_run_id" id="second-test-select">
+                    <option value="">Выбрать второй тест</option>
+                    {% for test in tests %}
+                    <option value="{{ test.id }}">{{ test.name }} · {{ test.started_at.strftime("%Y-%m-%d %H:%M:%S") }}{% if test.load_profile and test.load_profile.project %} · {{ test.load_profile.project.name }}{% endif %}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-12">
+                <button class="btn btn-primary">Сохранить отчет</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endif %}
+
+<div class="card border-0 shadow-sm">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table align-middle">
+                <thead>
+                    <tr>
+                        <th>Название</th>
+                        <th>Тип</th>
+                        <th>Проект</th>
+                        <th>Автор</th>
+                        <th>Связанные тесты</th>
+                        <th>Статус</th>
+                        <th>Файл</th>
+                        <th>Действия</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for report in reports %}
+                    <tr>
+                        <td>{{ report.name }}</td>
+                        <td>{{ "Целевой" if (report.report_type or report_type_target) == report_type_target else "Сравнительный" }}</td>
+                        <td>{{ report.project.name if report.project else "-" }}</td>
+                        <td>{{ report.author.login if report.author else "-" }}</td>
+                        <td>
+                            {{ report.test_run.name if report.test_run else "-" }}
+                            {% if report.second_test_run %}
+                            vs {{ report.second_test_run.name }}
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if report.status == "PASS" %}
+                            <span class="badge text-bg-success">PASS</span>
+                            {% elif report.status == "FAIL" %}
+                            <span class="badge text-bg-danger">FAIL</span>
+                            {% elif report.status == "COMPARATIVE" %}
+                            <span class="badge text-bg-info">COMPARATIVE</span>
+                            {% elif report.status == "ERROR" %}
+                            <span class="badge text-bg-dark">ERROR</span>
+                            {% else %}
+                            <span class="badge text-bg-secondary">{{ report.status }}</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if report.file_path %}
+                            <a href="/reports/{{ report.id }}/view" target="_blank" rel="noreferrer">Открыть</a>
+                            {% else %}
+                            -
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if user.role in ["ADMIN", "ENGINEER"] %}
+                            <form method="post" action="/reports/{{ report.id }}/delete" onsubmit="return confirm('Удалить отчет?');">
+                                <button class="btn btn-sm btn-danger-soft">Удалить</button>
+                            </form>
+                            {% else %}
+                            <span class="text-secondary">Только просмотр</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="8" class="text-secondary">Пока отчетов нет</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+{% if user.role in ["ADMIN", "ENGINEER"] %}
+<script>
+    const reportTypeSelect = document.getElementById("report-type");
+    const secondTestField = document.getElementById("second-test-field");
+    const secondTestSelect = document.getElementById("second-test-select");
+
+    function syncReportForm() {
+        const isComparative = reportTypeSelect.value === "{{ report_type_comparative }}";
+        secondTestField.hidden = !isComparative;
+        secondTestSelect.required = isComparative;
+        if (!isComparative) {
+            secondTestSelect.value = "";
+        }
+    }
+
+    reportTypeSelect.addEventListener("change", syncReportForm);
+    syncReportForm();
+</script>
+{% endif %}
+{% endblock %}
