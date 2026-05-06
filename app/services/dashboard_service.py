@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
 
 from sqlalchemy import func
 from sqlalchemy.orm import Session
@@ -140,6 +140,8 @@ def _build_month_quality(session: Session, current_user: User, project_ids: list
 
 def _normalize_day(value) -> date:
     """Функция для приведения значения даты к единому формату."""
+    if isinstance(value, datetime):
+        return value.date()
     if isinstance(value, date):
         return value
     return value.date()
