@@ -1,9 +1,9 @@
-from pydantic_settings import BaseSettings, SettingsConfigDict
+﻿from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
     """Класс для хранения и чтения всех настроек приложения."""
-    app_name: str = "LT Report Analyzer"
+    app_name: str = "Анализ результатов"
     app_host: str = "0.0.0.0"
     app_port: int = 8000
     secret_key: str = "change-me"
